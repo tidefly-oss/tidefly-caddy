@@ -45,7 +45,6 @@ jobs:
         run: |
           CADDY_VER="${{ steps.caddy_version.outputs.version }}"
           INPUT_VER="${{ github.event.inputs.version }}"
-          # Use manual input if provided, otherwise auto-generate from caddy version + sha
           if [ -n "$INPUT_VER" ]; then
             TAG="$INPUT_VER"
           else
@@ -78,6 +77,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.tag.outputs.tag }}
+          git push origin ${{ steps.tag.outputs.tag }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
