@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: tidefly-oss/tidefly-caddy
+  IMAGE_NAME: tidefly-plane-oss/tidefly-plane-caddy
 
 jobs:
   build:
