@@ -22,10 +22,16 @@ This image is used internally by Tidefly. The Caddy Admin API (`2019`) is config
 ## Building Locally
 
 ```bash
-docker build -t tidefly-caddy:local .
-docker run --rm tidefly-caddy:local caddy list-modules | grep -E "layer4|ratelimit"
+docker build -t tidefly-plane-caddy:local .
+docker run --rm tidefly-plane-caddy:local caddy list-modules | grep -E "layer4|ratelimit"
 ```
 
 ## License
 
 Apache 2.0 — same as Caddy.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/dbuettgen">@dbuettgen</a> · Part of the <a href="https://github.com/tidefly-oss">tidefly-oss</a> project</sub>
+</div>
