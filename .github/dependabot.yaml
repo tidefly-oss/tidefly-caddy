@@ -1,21 +1,35 @@
 version: 2
 updates:
-  - package-ecosystem: "docker"
-    directory: "/"
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: "Europe/Berlin"
+    assignees:
+      - dbuettgen
     commit-message:
-      prefix: "chore"
+      prefix: chore
     labels:
-      - "dependencies"
+      - dependencies
+      - docker
 
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: "Europe/Berlin"
+    assignees:
+      - dbuettgen
     commit-message:
-      prefix: "chore"
+      prefix: chore
     labels:
-      - "dependencies"
+      - dependencies
+      - github-actions
+    groups:
+      actions:
+        patterns:
+          - "*"
