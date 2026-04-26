@@ -1,63 +1,41 @@
-name: Build & Release
+name: Release
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - "caddy/Dockerfile"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Version tag (e.g. v1.0.1)"
-        required: false
+    tags:
+      - "v*.*.*"
 
 env:
-  GHCR_IMAGE: ghcr.io/tidefly-oss/tidefly-caddy
-  DH_IMAGE: tidefly/tidefly-caddy
+  DH_IMAGE: tidefly/tidefly-caddy # ← pro Repo anpassen
 
 jobs:
-  build:
+  validate-tag:
+    name: Validate Release Tag
     runs-on: ubuntu-latest
+    steps:
+      - name: Check tag format
+        run: |
+          TAG="${{ github.ref_name }}"
+          if ! echo "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+(-alpha(\.[0-9]+)?|-beta(\.[0-9]+)?|-rc\.[0-9]+)?$'; then
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+          echo "Valid tag: $TAG"
+
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    needs: validate-tag
     permissions:
       contents: write
-      packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Get Caddy version from builder
-        id: caddy_version
-        run: |
-          VERSION=$(docker run --rm caddy:2 caddy version | cut -d' ' -f1)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Generate release tag
-        id: tag
-        run: |
-          CADDY_VER="${{ steps.caddy_version.outputs.version }}"
-          INPUT_VER="${{ github.event.inputs.version }}"
-          if [ -n "$INPUT_VER" ]; then
-            TAG="$INPUT_VER"
-          else
-            SHA="${{ github.sha }}"
-            TAG="${CADDY_VER}-tidefly.${SHA:0:7}"
-          fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "caddy_version=$CADDY_VER" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -66,44 +44,28 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.GHCR_IMAGE }}
-            ${{ env.DH_IMAGE }}
+          images: ${{ env.DH_IMAGE }}
           tags: |
             type=raw,value=latest
-            type=raw,value=${{ steps.tag.outputs.tag }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: caddy/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.tag.outputs.tag }}
-          git push origin ${{ steps.tag.outputs.tag }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
-          body: |
-            ## tidefly-caddy ${{ steps.tag.outputs.tag }}
-
-            Built on Caddy ${{ steps.tag.outputs.caddy_version }}
-
-            ### Included Plugins
-            - [caddy-l4](https://github.com/mholt/caddy-l4) — Layer 4 TCP/UDP proxy
-            - [caddy-ratelimit](https://github.com/mholt/caddy-ratelimit) — Rate limiting
-
-            ### Image
+          name: ${{ github.ref_name }}
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          generate_release_notes: true
