@@ -8,11 +8,14 @@ on:
   schedule:
     - cron: "0 8 * * 1"
 
+permissions: {}  # default alles auf none
+
 jobs:
   trivy:
     name: Trivy Scan
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
     steps:
       - uses: actions/checkout@v6
@@ -33,6 +36,7 @@ jobs:
     name: CodeQL
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       security-events: write
     steps:
       - uses: actions/checkout@v6
