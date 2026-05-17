@@ -3,6 +3,8 @@ FROM caddy:2-builder AS builder
 RUN xcaddy build \
     --with github.com/mholt/caddy-l4 \
     --with github.com/mholt/caddy-ratelimit \
+    --with github.com/hslatman/caddy-crowdsec-bouncer \
+    --with github.com/corazawaf/coraza-caddy \
     --output /usr/bin/caddy
 
 # Verify modules during build (nicht im finalen Image)
