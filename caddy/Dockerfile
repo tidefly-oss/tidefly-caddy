@@ -17,4 +17,4 @@ COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 EXPOSE 80 443 2019
 
 ENTRYPOINT ["/usr/bin/caddy"]
-CMD ["run", "--config", "/dev/null", "--adapter", "caddyfile"]
+CMD ["run"]
