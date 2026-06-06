@@ -7,14 +7,16 @@ RUN xcaddy build \
     --with github.com/corazawaf/coraza-caddy \
     --output /usr/bin/caddy
 
-# Verify modules during build (nicht im finalen Image)
 RUN /usr/bin/caddy list-modules | grep -E "layer4|ratelimit"
 
-FROM gcr.io/distroless/static-debian12
+FROM caddy:2-alpine
 
 COPY --from=builder /usr/bin/caddy /usr/bin/caddy
 
 EXPOSE 80 443 2019
+
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:2019/ || exit 1
 
 ENTRYPOINT ["/usr/bin/caddy"]
 CMD ["run"]
